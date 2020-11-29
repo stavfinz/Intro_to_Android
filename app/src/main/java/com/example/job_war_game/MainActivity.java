@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -16,13 +17,24 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
-
+    public static final int DELAY = 1000;
     private ImageView main_PNG_leftCard;
     private ImageView main_PNG_rightCard;
     private TextView main_LBL_scorePlayer1;
     private TextView main_LBL_scorePlayer2;
     private ImageButton main_IMGBTN_play;
     private WarGame game;
+    private boolean isClicked = false;//flag that will help to control the clicks on button
+    final Handler handler = new Handler();
+    private Runnable runnable = new Runnable() {
+        public void run() {
+            if(isClicked){
+                handler.postDelayed(this, DELAY);
+                playGame(game);
+            }
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,16 +42,28 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         game=new WarGame();
         findviews();
-        main_IMGBTN_play.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //TODO
-                if(game.getRound() <= WarGame.MAX_ROUNDS)
-                    nextRound();
-                else
-                    presentWinner();
-            }
-        });
+        if(!isClicked){//To lock the press on the play button
+            main_IMGBTN_play.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //TODO
+                    isClicked=true;
+                    playGame(game);
+                    startGame();
+                }
+            });
+        }
+    }
+
+    /**
+     * Playing one round in the game or presenting the winner
+     * @param game
+     */
+    private void playGame(WarGame game) {
+        if(game.getRound() <= WarGame.MAX_ROUNDS)
+            nextRound();
+        else
+            presentWinner();
     }
 
     private void presentWinner() {
@@ -100,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         Log.d("pttt", "onStart");
         super.onStart();
+        startGame();
 
     }
 
@@ -127,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         Log.d("pttt", "onStop");
         super.onStop();
+        stopGame();
 
     }
 
@@ -136,4 +162,19 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+
+
+    /**
+     * Run the next runnable after DELAY(Play the next round after DELAY automatically)
+     */
+    private void startGame() {
+        handler.postDelayed(runnable, DELAY);
+    }
+
+    /**
+     *Stop the runnable from running while the activity is ON STOP(wont play next round)
+     */
+    private void stopGame() {
+        handler.removeCallbacks(runnable);
+    }
 }
